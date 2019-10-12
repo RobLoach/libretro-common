@@ -94,7 +94,7 @@ char *inet_ntoa(struct SceNetInAddr in)
 {
 	static char ip_addr[INET_ADDRSTRLEN + 1];
 
-   if (!inet_ntop_compat(AF_INET, &in, ip_addr, INET_ADDRSTRLEN))
+   if (inet_ntop_compat(AF_INET, &in, ip_addr, INET_ADDRSTRLEN) == NULL)
 		strlcpy(ip_addr, "Invalid", sizeof(ip_addr));
 
 	return ip_addr;
@@ -184,8 +184,7 @@ int getaddrinfo_retro(const char *node, const char *service,
    }
 
 #if defined(WIIU)
-   if (!node)
-   {
+   if (node == NULL) {
       /* Wii U's socket library chokes on NULL node */
       if (hints->ai_flags & AI_PASSIVE)
          node = "0.0.0.0";
@@ -330,7 +329,7 @@ bool network_init(void)
    socket_lib_init();
 #elif defined(_3DS)
     _net_compat_net_memory = (u32*)memalign(SOC_ALIGN, SOC_BUFFERSIZE);
-	if (!_net_compat_net_memory)
+	if (_net_compat_net_memory == NULL)
 		return false;
 	Result ret = socInit(_net_compat_net_memory, SOC_BUFFERSIZE);//WIFI init
 	if (ret != 0)

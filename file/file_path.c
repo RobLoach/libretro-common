@@ -389,11 +389,11 @@ void fill_pathname(char *out_path, const char *in_path,
  * present in 'in_path', it will be ignored.
  *
  */
-size_t fill_pathname_noext(char *out_path, const char *in_path,
+void fill_pathname_noext(char *out_path, const char *in_path,
       const char *replace, size_t size)
 {
    strlcpy(out_path, in_path, size);
-   return strlcat(out_path, replace, size);
+   strlcat(out_path, replace, size);
 }
 
 char *find_last_slash(const char *str)
@@ -431,8 +431,12 @@ void fill_pathname_slash(char *path, size_t size)
    /* Try to preserve slash type. */
    if (last_slash != (path + path_len - 1))
    {
-      path[path_len]   = last_slash[0];
-      path[path_len+1] = '\0';
+      char join_str[2];
+
+      join_str[0] = '\0';
+
+      strlcpy(join_str, last_slash, sizeof(join_str));
+      strlcat(path, join_str, size);
    }
 }
 
@@ -453,7 +457,7 @@ void fill_pathname_slash(char *path, size_t size)
  * E.g..: in_dir = "/tmp/some_dir", in_basename = "/some_content/foo.c",
  * replace = ".asm" => in_dir = "/tmp/some_dir/foo.c.asm"
  **/
-size_t fill_pathname_dir(char *in_dir, const char *in_basename,
+void fill_pathname_dir(char *in_dir, const char *in_basename,
       const char *replace, size_t size)
 {
    const char *base = NULL;
@@ -461,7 +465,7 @@ size_t fill_pathname_dir(char *in_dir, const char *in_basename,
    fill_pathname_slash(in_dir, size);
    base = path_basename(in_basename);
    strlcat(in_dir, base, size);
-   return strlcat(in_dir, replace, size);
+   strlcat(in_dir, replace, size);
 }
 
 /**
@@ -472,14 +476,14 @@ size_t fill_pathname_dir(char *in_dir, const char *in_basename,
  *
  * Copies basename of @in_path into @out_path.
  **/
-size_t fill_pathname_base(char *out, const char *in_path, size_t size)
+void fill_pathname_base(char *out, const char *in_path, size_t size)
 {
    const char     *ptr = path_basename(in_path);
 
    if (!ptr)
       ptr = in_path;
 
-   return strlcpy(out, ptr, size);
+   strlcpy(out, ptr, size);
 }
 
 void fill_pathname_base_noext(char *out,
@@ -489,12 +493,12 @@ void fill_pathname_base_noext(char *out,
    path_remove_extension(out);
 }
 
-size_t fill_pathname_base_ext(char *out,
+void fill_pathname_base_ext(char *out,
       const char *in_path, const char *ext,
       size_t size)
 {
    fill_pathname_base_noext(out, in_path, size);
-   return strlcat(out, ext, size);
+   strlcat(out, ext, size);
 }
 
 /**
@@ -589,7 +593,7 @@ void fill_pathname_parent_dir(char *out_dir,
  * E.g.:
  * out_filename = "RetroArch-{month}{day}-{Hours}{Minutes}.{@ext}"
  **/
-size_t fill_dated_filename(char *out_filename,
+void fill_dated_filename(char *out_filename,
       const char *ext, size_t size)
 {
    time_t       cur_time = time(NULL);
@@ -597,7 +601,7 @@ size_t fill_dated_filename(char *out_filename,
 
    strftime(out_filename, size,
          "RetroArch-%m%d-%H%M%S", tm_);
-   return strlcat(out_filename, ext, size);
+   strlcat(out_filename, ext, size);
 }
 
 /**
@@ -851,9 +855,13 @@ char *path_resolve_realpath(char *buf, size_t size, bool resolve_symlinks)
          t++;
       }
       else if (next - p == 1 && p[0] == '.')
+      {
          p += 2;
+      }
       else if (next - p == 0)
+      {
          p += 1;
+      }
       else
       {
          /* fail when truncating */
@@ -890,7 +898,7 @@ end:
  *
  * E.g. path /a/b/e/f.cg with base /a/b/c/d/ turns into ../../e/f.cg
  **/
-size_t path_relative_to(char *out,
+void path_relative_to(char *out,
       const char *path, const char *base, size_t size)
 {
    size_t i;
@@ -901,7 +909,10 @@ size_t path_relative_to(char *out,
    if (strlen(path) >= 2 && strlen(base) >= 2
          && path[1] == ':' && base[1] == ':'
          && path[0] != base[0])
-      return strlcpy(out, path, size);
+   {
+      strlcpy(out, path, size);
+      return;
+   }
 #endif
 
    /* Trim common beginning */
@@ -915,8 +926,7 @@ size_t path_relative_to(char *out,
    for (i = 0; trimmed_base[i]; i++)
       if (trimmed_base[i] == path_default_slash_c())
          strlcat(out, ".." path_default_slash(), size);
-
-   return strlcat(out, trimmed_path, size);
+   strlcat(out, trimmed_path, size);
 }
 
 /**
@@ -956,7 +966,7 @@ void fill_pathname_resolve_relative(char *out_path,
  * Makes sure not to get  two consecutive slashes
  * between directory and path.
  **/
-size_t fill_pathname_join(char *out_path,
+void fill_pathname_join(char *out_path,
       const char *dir, const char *path, size_t size)
 {
    if (out_path != dir)
@@ -965,10 +975,10 @@ size_t fill_pathname_join(char *out_path,
    if (*out_path)
       fill_pathname_slash(out_path, size);
 
-   return strlcat(out_path, path, size);
+   strlcat(out_path, path, size);
 }
 
-size_t fill_pathname_join_special_ext(char *out_path,
+void fill_pathname_join_special_ext(char *out_path,
       const char *dir,  const char *path,
       const char *last, const char *ext,
       size_t size)
@@ -978,25 +988,25 @@ size_t fill_pathname_join_special_ext(char *out_path,
       fill_pathname_slash(out_path, size);
 
    strlcat(out_path, last, size);
-   return strlcat(out_path, ext, size);
+   strlcat(out_path, ext, size);
 }
 
-size_t fill_pathname_join_concat_noext(char *out_path,
+void fill_pathname_join_concat_noext(char *out_path,
       const char *dir, const char *path,
       const char *concat,
       size_t size)
 {
    fill_pathname_noext(out_path, dir, path, size);
-   return strlcat(out_path, concat, size);
+   strlcat(out_path, concat, size);
 }
 
-size_t fill_pathname_join_concat(char *out_path,
+void fill_pathname_join_concat(char *out_path,
       const char *dir, const char *path,
       const char *concat,
       size_t size)
 {
    fill_pathname_join(out_path, dir, path, size);
-   return strlcat(out_path, concat, size);
+   strlcat(out_path, concat, size);
 }
 
 void fill_pathname_join_noext(char *out_path,
@@ -1017,7 +1027,7 @@ void fill_pathname_join_noext(char *out_path,
  * Joins a directory (@dir) and path (@path) together
  * using the given delimiter (@delim).
  **/
-size_t fill_pathname_join_delim(char *out_path, const char *dir,
+void fill_pathname_join_delim(char *out_path, const char *dir,
       const char *path, const char delim, size_t size)
 {
    size_t copied;
@@ -1031,16 +1041,15 @@ size_t fill_pathname_join_delim(char *out_path, const char *dir,
    out_path[copied+1] = '\0';
 
    if (path)
-      copied = strlcat(out_path, path, size);
-   return copied;
+      strlcat(out_path, path, size);
 }
 
-size_t fill_pathname_join_delim_concat(char *out_path, const char *dir,
+void fill_pathname_join_delim_concat(char *out_path, const char *dir,
       const char *path, const char delim, const char *concat,
       size_t size)
 {
    fill_pathname_join_delim(out_path, dir, path, delim, size);
-   return strlcat(out_path, concat, size);
+   strlcat(out_path, concat, size);
 }
 
 /**
@@ -1058,7 +1067,7 @@ size_t fill_pathname_join_delim_concat(char *out_path, const char *dir,
  * E.g.: "/path/to/game.img" -> game.img
  *       "/path/to/myarchive.7z#folder/to/game.img" -> game.img
  */
-size_t fill_short_pathname_representation(char* out_rep,
+void fill_short_pathname_representation(char* out_rep,
       const char *in_path, size_t size)
 {
    char path_short[PATH_MAX_LENGTH];
@@ -1068,7 +1077,7 @@ size_t fill_short_pathname_representation(char* out_rep,
    fill_pathname(path_short, path_basename(in_path), "",
             sizeof(path_short));
 
-   return strlcpy(out_rep, path_short, size);
+   strlcpy(out_rep, path_short, size);
 }
 
 void fill_short_pathname_representation_noext(char* out_rep,
@@ -1286,24 +1295,20 @@ void fill_pathname_application_path(char *s, size_t len)
       CFStringRef bundle_path = CFURLCopyPath(bundle_url);
       CFStringGetCString(bundle_path, s, len, kCFStringEncodingUTF8);
 #ifdef HAVE_COCOATOUCH
-      {
-         /* This needs to be done so that the path becomes 
-          * /private/var/... and this
-          * is used consistently throughout for the iOS bundle path */
-         char resolved_bundle_dir_buf[PATH_MAX_LENGTH] = {0};
-         if (realpath(s, resolved_bundle_dir_buf))
-         {
-            strlcpy(s, resolved_bundle_dir_buf, len - 1);
-            strlcat(s, "/", len);
-         }
-      }
+       // This needs to be done so that the path becomes /private/var/... and this
+       // is used consistently throughout for the iOS bundle path
+       char resolved_bundle_dir_buf[PATH_MAX_LENGTH] = {0};
+       if (realpath(s, resolved_bundle_dir_buf))
+       {
+           strlcpy(s,resolved_bundle_dir_buf, len);
+           strlcat(s,"/",len);
+       }
 #endif
 
       CFRelease(bundle_path);
       CFRelease(bundle_url);
 #ifndef HAVE_COCOATOUCH
-      /* Not sure what this does but it breaks 
-       * stuff for iOS, so skipping */
+      // Not sure what this does but it breaks stuff for iOS so skipping
       retro_assert(strlcat(s, "nobin", len) < len);
 #endif
       return;

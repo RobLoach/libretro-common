@@ -321,9 +321,9 @@ void string_remove_all_chars(char *str, char c)
 
 /* Converts string to unsigned integer.
  * Returns 0 if string is invalid  */
-unsigned string_to_unsigned(const char *str)
+unsigned string_to_unsigned(char *str)
 {
-   const char *ptr = NULL;
+   char *ptr = NULL;
 
    if (string_is_empty(str))
       return 0;
